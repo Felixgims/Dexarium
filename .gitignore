@@ -1,0 +1,6 @@
+node_modules/
+dist/
+scripts/source/
+playwright-report/
+test-results/
+*.local
