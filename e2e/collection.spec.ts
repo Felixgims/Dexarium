@@ -46,9 +46,15 @@ test("collection, tracker numbering, backup, reload and offline", async ({
   await page.getByLabel("National").check();
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await page.getByLabel("Ámbito activo").selectOption("national-6");
+  await expect(page.getByLabel("Ámbito activo")).toHaveValue("national-6");
   await expect(page.locator(".pokemon-card").first()).toContainText(
     "Bulbasaur",
   );
+  // Editing the tracker must preserve the selected scope while it remains valid.
+  await page.getByRole("button", { name: "Editar ámbitos" }).click();
+  await page.getByRole("button", { name: "Guardar cambios" }).click();
+  await expect(page.getByLabel("Ámbito activo")).toHaveValue("national-6");
+  await expect(page.locator(".pokemon-card").first()).toContainText("Bulbasaur");
   await page.getByRole("button", { name: "Editar ámbitos" }).click();
   await page.getByLabel("National").uncheck();
   await page.getByRole("button", { name: "Guardar cambios" }).click();
