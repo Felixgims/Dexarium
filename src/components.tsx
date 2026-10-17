@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { games, dexes, speciesById, formById } from "./catalog";
 import type { Form, Tracker, Specimen } from "./domain";
+import { validateTrackerName } from "./tracker-names";
 import { PokedexDetail } from "./pokedex-detail";
 import { contextualForms, encyclopediaForms } from "./encyclopedia";
 export function Sprite({
@@ -67,7 +68,9 @@ export function TrackerEditor({
   initial,
   onClose,
   onSave,
+  trackers,
 }: {
+  trackers: Tracker[];
   initial: Tracker | null;
   onClose: () => void;
   onSave: (t: Tracker) => void;
@@ -81,6 +84,7 @@ export function TrackerEditor({
     [description, setDescription] = useState(initial?.description ?? ""),
     [theme, setTheme] = useState(initial?.theme ?? "#a5e7a0");
   const game = games.find((g) => g.id === gameId)!;
+  const nameError = validateTrackerName(name, trackers, initial?.id);
   return (
     <Modal
       title={initial ? "Editar Pokédex" : "Una nueva aventura"}
@@ -89,7 +93,7 @@ export function TrackerEditor({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (name.trim() && scopeIds.length)
+          if (!nameError && scopeIds.length)
             onSave({
               id: initial?.id ?? crypto.randomUUID(),
               name: name.trim(),
@@ -112,6 +116,7 @@ export function TrackerEditor({
             onChange={(e) => setName(e.target.value)}
           />
         </label>
+        {nameError && name.trim() && <p role="alert">{nameError}</p>}
         <label>
           Juego
           <select
@@ -174,7 +179,8 @@ export function TrackerEditor({
             onChange={(e) => setTheme(e.target.value)}
           />
         </label>
-        <button className="primary" disabled={!name.trim() || !scopeIds.length}>
+        <button type="button" onClick={onClose}>Cancelar</button>
+        <button className="primary" disabled={!!nameError || !scopeIds.length}>
           {initial ? "Guardar cambios" : "Crear Pokédex"}
         </button>
       </form>

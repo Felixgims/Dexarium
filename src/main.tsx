@@ -43,6 +43,8 @@ import {
   setCaught,
   deleteTracker,
   exportBackup,
+  saveTracker,
+  classifyCapture,
 } from "./storage";
 import { validateBackup, importBackup } from "./backup";
 import {
@@ -57,6 +59,7 @@ import {
   type Backup,
   type Specimen,
 } from "./domain";
+import { aggregateCollection } from "./aggregation";
 import "./style.css";
 import "./desktop.css";
 import "./pokedex.css";
@@ -130,7 +133,21 @@ function App() {
     setPage(0);
     setDetail(null);
   }, [view, route[1], search, filter, type, gen, category, gameFilter]);
-  const stats = completion(specimens, forms),
+  const aggregate = useMemo(() => aggregateCollection(specimens, trackers, progress, forms), [specimens, trackers, progress]);
+  const countedSpecimens = useMemo(() => {
+    const extras: Specimen[] = [];
+    for (const [formId, quantities] of aggregate.counts) {
+      for (const shiny of [false, true]) {
+        const manual = specimens.filter(s => s.formId === formId && s.shiny === shiny).length;
+        const additional = (shiny ? quantities.shiny : quantities.normal) - manual;
+        for (let i = 0; i < additional; i++) extras.push({
+          id: `derived:${formId}:${shiny}:${i}`, formId, shiny, createdAt: "",
+        });
+      }
+    }
+    return [...specimens, ...extras];
+  }, [specimens, aggregate]);
+  const stats = completion(countedSpecimens, forms),
     activeTracker = trackers.find((t) => t.id === route[1]);
   const [scope, setScope] = useState("");
   useEffect(() => {
@@ -145,21 +162,17 @@ function App() {
   const caught = new Set(trackerProgress.map((p) => p.speciesId));
   const countMap = useMemo(() => {
     const map = new Map<string, { normal: number; shiny: number }>();
-    for (const s of specimens) {
-      const c = map.get(s.formId) ?? { normal: 0, shiny: 0 };
-      c[s.shiny ? "shiny" : "normal"]++;
-      map.set(s.formId, c);
-    }
+    for (const [id, count] of aggregate.counts) map.set(id, count);
     return map;
-  }, [specimens]);
+  }, [aggregate]);
   const ownedSpecies = new Set(
-    specimens.map((s) => formById.get(s.formId)?.speciesId),
+    [...countedSpecimens.map((s) => formById.get(s.formId)?.speciesId), ...aggregate.unclassified.keys()],
   );
   const title =
     view === "collection"
       ? "Colección global"
       : view === "national"
-        ? "Pokédex Nacional"
+        ? "PokéBank"
         : view === "tracker"
           ? (activeTracker?.name ?? "Pokédex no encontrada")
           : view === "pokedex"
@@ -319,7 +332,7 @@ function App() {
           </NavLink>
           <NavLink to="/national">
             <BookOpen size={19} />
-            Pokédex Nacional
+            PokéBank
           </NavLink>
           <div className="nav-label dex-label">
             MIS POKÉDEXES
@@ -661,7 +674,8 @@ function App() {
                   <button onClick={() => setEditing(activeTracker)}>
                     Editar ámbitos
                   </button>
-                  <button onClick={() => setDeleteId(activeTracker.id)}>
+                  <button onClick={() => setEditing(activeTracker)}>Renombrar</button>
+                  <button aria-label={`Eliminar Pokédex ${activeTracker.name}`} onClick={() => setDeleteId(activeTracker.id)}>
                     Eliminar
                   </button>
                 </section>
@@ -803,7 +817,7 @@ function App() {
                             </span>
                           </button>
                           {view === "tracker" ? (
-                            <button
+                            <> <button
                               className={`capture ${caught.has(s.id) ? "captured" : ""}`}
                               onClick={() =>
                                 run(() =>
@@ -812,6 +826,7 @@ function App() {
                                     activeTracker!.id,
                                     s.id,
                                     !caught.has(s.id),
+                                    f,
                                   ),
                                 )
                               }
@@ -823,6 +838,16 @@ function App() {
                               )}{" "}
                               {caught.has(s.id) ? "Capturado" : "Registrar"}
                             </button>
+                            {caught.has(s.id) && (
+                              <select aria-label={`Variante capturada de ${s.name}`}
+                                value={trackerProgress.find(p => p.speciesId === s.id)?.shiny === undefined ? "unknown" : trackerProgress.find(p => p.speciesId === s.id)?.shiny ? "shiny" : "normal"}
+                                onChange={(e) => run(() => classifyCapture(db, activeTracker!.id, s.id, f, e.target.value === "shiny"))}>
+                                <option value="unknown" disabled>Sin clasificar</option>
+                                <option value="normal">Normal</option>
+                                {f.shiny === "available" && <option value="shiny">Shiny</option>}
+                              </select>
+                            )}
+                            </>
                           ) : view === "pokedex" ? (
                             <button
                               className="wiki-open"
@@ -852,7 +877,7 @@ function App() {
                                   >
                                     <button
                                       aria-label={`Quitar ${isShiny ? "shiny" : "normal"} ${s.name}`}
-                                      disabled={n === 0}
+                                      disabled={!specimens.some(s => s.formId === f.id && s.shiny === isShiny)}
                                       onClick={() =>
                                         run(() =>
                                           changeCount(db, f, isShiny, -1),
@@ -1121,13 +1146,14 @@ function App() {
       {(create || editing) && (
         <TrackerEditor
           initial={editing}
+          trackers={trackers}
           onClose={() => {
             setCreate(false);
             setEditing(null);
           }}
           onSave={(t) =>
             run(async () => {
-              await db.trackers.put(t);
+              await saveTracker(db, t);
               setCreate(false);
               setEditing(null);
               navigate(`/tracker/${t.id}`);
@@ -1160,6 +1186,7 @@ function App() {
           }
         />
       )}
+      {aggregate.unclassifiedTotal > 0 && <div className="notice">{aggregate.unclassifiedTotal} capturas sin clasificación normal/shiny. Se conservan sin inventar su variante.</div>}
       {pendingBackup && (
         <Modal title="Restaurar copia" onClose={() => setPendingBackup(null)}>
           <p>
@@ -1205,10 +1232,11 @@ function App() {
       )}
       {deleteId && (
         <Modal title="Eliminar Pokédex" onClose={() => setDeleteId(null)}>
+          <p>{trackers.find(t => t.id === deleteId)?.name} · {games.find(g => g.id === trackers.find(t => t.id === deleteId)?.gameId)?.name}</p>
           <p>
-            Se eliminará este tracker y su progreso. Los ejemplares de la
-            colección global se conservan.
+            Se eliminarán sus registros y su aportación al total global. Los ejemplares manuales se conservan.
           </p>
+          <button autoFocus onClick={() => setDeleteId(null)}>Cancelar</button>
           <button
             className="danger"
             onClick={() =>
@@ -1219,7 +1247,7 @@ function App() {
               })
             }
           >
-            Confirmar eliminación
+            Eliminar Pokédex
           </button>
         </Modal>
       )}

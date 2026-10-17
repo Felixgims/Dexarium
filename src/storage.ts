@@ -79,17 +79,35 @@ export async function setCaught(
   trackerId: string,
   speciesId: string,
   caught: boolean,
+  form?: Form,
 ) {
   const id = `${trackerId}/${speciesId}`;
-  if (caught)
+  if (caught) {
+    const previous = await database.progress.get(id);
     await database.progress.put({
-      id,
-      trackerId,
-      speciesId,
-      state: "caught",
-      specimenIds: [],
+      id, trackerId, speciesId, state: "caught", specimenIds: previous?.specimenIds ?? [],
+      formId: previous?.formId ?? form?.id,
+      shiny: previous?.shiny ?? (form ? false : undefined),
     });
+  }
   else await database.progress.delete(id);
+}
+export async function saveTracker(database: CollectionDB, tracker: Tracker) {
+  const { validateTrackerName, cleanTrackerName } = await import("./tracker-names");
+  await database.transaction("rw", database.trackers, async () => {
+    const issue = validateTrackerName(tracker.name, await database.trackers.toArray(), tracker.id);
+    if (issue) throw new Error(issue);
+    await database.trackers.put({ ...tracker, name: cleanTrackerName(tracker.name) });
+  });
+}
+export async function classifyCapture(database: CollectionDB, trackerId: string, speciesId: string, form: Form, shiny: boolean) {
+  if (form.speciesId !== speciesId || (shiny && form.shiny !== "available")) throw new Error("Variante inválida.");
+  const id = `${trackerId}/${speciesId}`;
+  await database.transaction("rw", database.progress, async () => {
+    const p = await database.progress.get(id);
+    if (!p || p.state !== "caught") throw new Error("Captura no registrada.");
+    await database.progress.update(id, { formId: form.id, shiny });
+  });
 }
 export async function deleteTracker(database: CollectionDB, id: string) {
   await database.transaction(

@@ -98,6 +98,11 @@ export function validateBackup(input: unknown): Backup {
         ["seen", "caught"].includes(p.state as string),
       "Progreso inválido.",
     );
+    if (p.formId !== undefined || p.shiny !== undefined) {
+      assert(typeof p.formId === "string" && typeof p.shiny === "boolean" &&
+        forms.some(f => f.id === p.formId && f.speciesId === p.speciesId) &&
+        (!p.shiny || forms.find(f => f.id === p.formId)?.shiny === "available"), "Identidad de captura inválida.");
+    }
     const ids = p.specimenIds ?? [];
     assert(
       Array.isArray(ids) &&

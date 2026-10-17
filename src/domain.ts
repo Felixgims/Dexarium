@@ -60,6 +60,9 @@ export interface Tracker {
   theme: string;
 }
 export interface Progress {
+  /** Explicitly identified capture, absent on legacy species-only records. */
+  formId?: string;
+  shiny?: boolean;
   id: string;
   trackerId: string;
   speciesId: string;
