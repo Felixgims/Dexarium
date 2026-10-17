@@ -150,8 +150,15 @@ function App() {
   const stats = completion(countedSpecimens, forms),
     activeTracker = trackers.find((t) => t.id === route[1]);
   const [scope, setScope] = useState("");
+  // Changing visible scopes must not reset an explicitly selected, still-valid scope.
+  // Previously editing the tracker recreated scopeIds and always selected the first
+  // entry, racing with a user's choice in the scope dropdown.
   useEffect(() => {
-    setScope(activeTracker?.scopeIds[0] ?? "");
+    setScope(previous =>
+      activeTracker?.scopeIds.includes(previous)
+        ? previous
+        : (activeTracker?.scopeIds[0] ?? ""),
+    );
     setPage(0);
   }, [activeTracker?.id, activeTracker?.scopeIds.join(",")]);
   const validDexes = activeTracker ? trackerDexes(activeTracker) : [];
