@@ -85,13 +85,15 @@ export function validateBackup(input: unknown): Backup {
       "Ámbitos no válidos.",
     );
   }
+  const specimenById = new Map((specimens as Specimen[]).map((s) => [s.id, s]));
+  const trackerById = new Map((trackers as Tracker[]).map((t) => [t.id, t]));
   const normalized = progress.map((p) => {
     assert(
       object(p) &&
         str(p.trackerId) &&
         str(p.speciesId) &&
         p.id === `${p.trackerId}/${p.speciesId}` &&
-        trackers.some((t) => (t as Tracker).id === p.trackerId) &&
+        trackerById.has(p.trackerId as string) &&
         species.some((s) => s.id === p.speciesId) &&
         ["seen", "caught"].includes(p.state as string),
       "Progreso inválido.",
@@ -99,14 +101,14 @@ export function validateBackup(input: unknown): Backup {
     const ids = p.specimenIds ?? [];
     assert(
       Array.isArray(ids) &&
-        ids.every((id) =>
-          specimens.some(
-            (s) =>
-              (s as Specimen).id === id &&
-              forms.find((f) => f.id === (s as Specimen).formId)?.speciesId ===
-                p.speciesId,
-          ),
-        ),
+        new Set(ids).size === ids.length &&
+        ids.every((id) => {
+          const specimen = specimenById.get(id);
+          return (
+            specimen !== undefined &&
+            forms.find((f) => f.id === specimen.formId)?.speciesId === p.speciesId
+          );
+        }),
       "Vínculo inválido.",
     );
     return { ...p, specimenIds: ids } as unknown as Progress;
@@ -137,6 +139,22 @@ export async function importBackup(
 ) {
   const b = validateBackup(backup);
   await db.transaction("rw", db.tables, async () => {
+    if (mode === "merge") {
+      // Incoming progress may link specimens already stored locally, but never dangling IDs.
+      // An imported tracker can also refer to progress already present in the browser.
+      const incomingSpecimens = new Set(b.specimens.map((s) => s.id));
+      const incomingTrackers = new Set(b.trackers.map((t) => t.id));
+      for (const p of b.progress) {
+        if (!incomingTrackers.has(p.trackerId) && !(await db.trackers.get(p.trackerId)))
+          throw new Error(`La Pokédex ${p.trackerId} no existe.`);
+        for (const id of p.specimenIds) {
+          if (incomingSpecimens.has(id)) continue;
+          const existing = await db.specimens.get(id);
+          if (!existing || forms.find((f) => f.id === existing.formId)?.speciesId !== p.speciesId)
+            throw new Error(`Vínculo de ejemplar inválido: ${id}.`);
+        }
+      }
+    }
     if (mode === "replace") for (const table of db.tables) await table.clear();
     // Stable IDs make merges idempotent. Conflicting records are rejected, never silently overwritten.
     for (const [table, rows] of [
