@@ -1,15 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
-import {
-  species,
-  forms,
-  games,
-  dexes,
-  speciesById,
-  baseForms,
-  formById,
-} from "./catalog";
+import { games, dexes, speciesById, formById } from "./catalog";
 import type { Form, Tracker, Specimen } from "./domain";
+import { PokedexDetail } from "./pokedex-detail";
+import { contextualForms, encyclopediaForms } from "./encyclopedia";
 export function Sprite({
   form,
   shiny = false,
@@ -27,7 +21,7 @@ export function Sprite({
       className={`sprite ${large ? "large" : ""}`}
       style={{
         backgroundImage: `url(${import.meta.env.BASE_URL}art/${a.sheet}.webp)`,
-        backgroundPosition: `-${(a.index % 10) * 96}px -${Math.floor(a.index / 10) * 96}px`,
+        backgroundPosition: `calc(-${a.index % 10} * var(--sprite-size, 96px)) calc(-${Math.floor(a.index / 10)} * var(--sprite-size, 96px))`,
       }}
     />
   ) : (
@@ -202,16 +196,13 @@ export function Detail({
   onLink: (id: string) => void;
 }) {
   const s = speciesById.get(form.speciesId)!;
-  const family = forms.filter((f) => f.speciesId === s.id);
+  const family = contextualForms(s.id, tracker?.gameId ?? "");
   const numbers = dexes
     .filter((d) => !d.id.startsWith("national-"))
     .flatMap((d) => {
       const e = d.entries.find((e) => e.speciesId === s.id);
       return e ? [{ name: d.name, n: e.number }] : [];
     });
-  const evolves = species.filter(
-    (p) => p.evolvesFrom === s.id || p.id === s.evolvesFrom,
-  );
   return (
     <Modal
       title={`${s.name} · #${String(s.number).padStart(3, "0")}`}
@@ -221,16 +212,13 @@ export function Detail({
         <Sprite form={form} large />
         <Sprite form={form} shiny large />
       </div>
-      <div className="type-tags">
-        {form.types.map((t) => (
-          <span key={t}>{t}</span>
-        ))}
-      </div>
       <label>
         Forma
         <select
           value={form.id}
-          onChange={(e) => onSelect(formById.get(e.target.value)!)}
+          onChange={(e) =>
+            onSelect(encyclopediaForms.find((f) => f.id === e.target.value)!)
+          }
         >
           {family.map((f) => (
             <option key={f.id} value={f.id}>
@@ -275,32 +263,27 @@ export function Detail({
           </>
         )}
       </dl>
-      <h3>Relaciones evolutivas</h3>
-      {evolves.length ? (
-        <div className="evolution-links">
-          {evolves.map((p) => (
-            <button key={p.id} onClick={() => onSelect(baseForms.get(p.id)!)}>
-              {p.id === s.evolvesFrom ? "←" : "→"} {p.name}
-            </button>
-          ))}
+      <PokedexDetail form={form} gameId={tracker?.gameId} onSelect={onSelect} />
+      <details>
+        <summary>Numeración por Pokédex</summary>
+        <div className="dex-numbers">
+          {numbers
+            .filter(
+              (d) =>
+                !tracker ||
+                dexes.some(
+                  (def) =>
+                    tracker.scopeIds.includes(def.id) && def.name === d.name,
+                ),
+            )
+            .map((d) => (
+              <span key={d.name}>
+                {d.name}
+                <b>#{d.n}</b>
+              </span>
+            ))}
         </div>
-      ) : (
-        <p>No hay relaciones evolutivas en este catálogo.</p>
-      )}
-      <h3>Numeración por Pokédex</h3>
-      <div className="dex-numbers">
-        {numbers.map((d) => (
-          <span key={d.name}>
-            {d.name}
-            <b>#{d.n}</b>
-          </span>
-        ))}
-      </div>
-      <p>
-        Estas entradas indican pertenencia a una Pokédex; no garantizan
-        encuentros ni disponibilidad de esta forma. Métodos evolutivos y
-        localizaciones se incorporarán tras verificarse.
-      </p>
+      </details>
       {tracker && (
         <>
           <h3>Vincular un ejemplar existente</h3>

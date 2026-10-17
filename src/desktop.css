@@ -1,0 +1,286 @@
+/* The browser workspace owns the viewport; auxiliary surfaces scroll independently. */
+@media (min-width: 1000px) and (orientation: landscape) {
+  .browser-app {
+    height: 100dvh;
+    min-height: 0;
+  }
+  .browser-app main {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .browser-app .topbar {
+    height: 40px;
+    flex: 0 0 40px;
+    padding: 0 20px;
+  }
+  .browser-app .workspace {
+    width: 100%;
+    max-width: 2200px;
+    min-height: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 20px 6px;
+    gap: 8px;
+    position: relative;
+  }
+  .browser-app .page-heading {
+    margin: 0;
+    flex-shrink: 0;
+    min-height: 48px;
+  }
+  .browser-app h1 {
+    font-size: clamp(20px, 1.5vw, 28px);
+    margin: 0;
+  }
+  .browser-app .eyebrow {
+    font-size: 8px;
+    margin-bottom: 2px;
+  }
+  .browser-app .page-heading p {
+    font-size: 10px;
+  }
+  .browser-app .summary {
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .browser-app .summary > div {
+    padding: 5px 14px;
+  }
+  .browser-app .summary strong {
+    font-size: 20px;
+    margin: 1px 0;
+  }
+  .browser-app .progress-track {
+    margin: 3px 0;
+  }
+  .browser-app .toolbar {
+    margin: 0;
+    min-height: 34px;
+    flex-shrink: 0;
+  }
+  .browser-app .tracker-tools {
+    margin: 0;
+    padding: 3px 8px;
+    flex-shrink: 0;
+    font-size: 10px;
+  }
+  .browser-app .tracker-tools button,
+  .browser-app .tracker-tools select {
+    padding: 4px 6px;
+    font-size: 10px;
+  }
+  .browser-app .pc {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+  }
+  .browser-app .box-header {
+    padding: 5px 12px;
+    flex-shrink: 0;
+    min-height: 42px;
+  }
+  .browser-app .box-title h2 {
+    font-size: 15px;
+    margin: 0;
+  }
+  .browser-app .box-icon {
+    width: 30px;
+    height: 30px;
+  }
+  .browser-app .box-viewport {
+    flex: 1;
+    min-height: 0;
+    padding: 6px;
+    overflow: visible;
+  }
+  .browser-app .box-grid {
+    height: 100%;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .browser-app .pokemon-card {
+    container-type: size;
+    overflow: visible;
+  }
+  .browser-app .pokemon-card:hover {
+    transform: none;
+  }
+  .browser-app .card-top {
+    inset: 2px 4px auto;
+  }
+  .browser-app .card-top button {
+    padding: 2px;
+  }
+  .browser-app .card-content {
+    padding: 0 3px;
+    justify-content: center;
+  }
+  .browser-app .card-content .sprite {
+    --sprite-size: clamp(28px, calc(100cqh - 48px), 96px);
+    width: var(--sprite-size);
+    height: var(--sprite-size);
+    background-size: calc(10 * var(--sprite-size)) calc(12 * var(--sprite-size));
+    margin: 0;
+    opacity: 0.85;
+  }
+  .browser-app .card-content strong {
+    font-size: 10px;
+    line-height: 12px;
+  }
+  .browser-app .form-label {
+    font-size: 8px;
+    line-height: 10px;
+  }
+  .browser-app .counters {
+    margin: 1px 3px 3px;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .browser-app .counters > div {
+    height: 20px;
+  }
+  .browser-app .counters button {
+    min-width: 20px;
+    line-height: 18px;
+  }
+  .browser-app .capture,
+  .browser-app .wiki-open {
+    height: 20px;
+    margin: 1px 0 3px;
+    padding: 1px 8px;
+    flex-shrink: 0;
+  }
+  .browser-app .box-footer {
+    padding: 5px 12px;
+    flex-shrink: 0;
+    min-height: 26px;
+  }
+  .browser-app .coverage-note {
+    margin: 0;
+    font-size: 9px;
+    line-height: 13px;
+    flex-shrink: 0;
+  }
+  .browser-app .filters {
+    position: absolute;
+    top: 200px;
+    right: 20px;
+    z-index: 4;
+    width: min(700px, calc(100% - 40px));
+    max-height: calc(100dvh - 250px);
+    overflow: auto;
+    background: var(--panel);
+    box-shadow: 0 12px 30px #0006;
+  }
+  .browser-app .alert,
+  .browser-app .notice {
+    position: absolute;
+    right: 20px;
+    top: 10px;
+    z-index: 6;
+    max-width: 70%;
+    max-height: 120px;
+    overflow: auto;
+  }
+  .browser-app .sidebar {
+    padding-top: 16px;
+  }
+  .browser-app .brand {
+    margin-bottom: 20px;
+  }
+}
+@media (min-width: 1000px) and (max-height: 780px) and (orientation: landscape) {
+  .browser-app .sidebar {
+    width: 200px;
+  }
+  .browser-app main {
+    margin-left: 200px;
+    width: calc(100% - 200px);
+  }
+  .browser-app .workspace {
+    gap: 5px;
+    padding-top: 6px;
+  }
+  .browser-app .summary > div {
+    padding: 3px 10px;
+  }
+  .browser-app .summary strong {
+    font-size: 18px;
+  }
+  .browser-app .summary small {
+    font-size: 8px;
+  }
+}
+@media (min-width: 1000px) and (orientation: landscape) {
+  .browser-app .box-grid {
+    animation: none;
+  }
+  .browser-app .summary {
+    min-height: 62px;
+  }
+  .browser-app .summary > div {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .browser-app .summary .stat-label {
+    line-height: 12px;
+  }
+  .browser-app .summary strong {
+    line-height: 22px;
+  }
+  .browser-app .summary small {
+    line-height: 12px;
+  }
+  .browser-app .card-content {
+    display: grid;
+    grid-template-columns: minmax(28px, 38%) minmax(0, 1fr);
+    grid-template-rows: 1fr 1fr;
+    align-content: center;
+    column-gap: 3px;
+  }
+  .browser-app .card-content .sprite {
+    --sprite-size: clamp(28px, calc(100cqh - 26px), 96px);
+    grid-row: 1 / 3;
+    justify-self: center;
+  }
+  .browser-app .card-content strong {
+    align-self: end;
+    justify-self: start;
+    font-size: 11px;
+    line-height: 14px;
+    height: 14px;
+  }
+  .browser-app .form-label {
+    align-self: start;
+    justify-self: start;
+    line-height: 11px;
+    height: 11px;
+    text-align: left;
+  }
+  .browser-app .brand {
+    font-size: 18px;
+    letter-spacing: 1px;
+  }
+}
+@media (min-width: 1000px) and (orientation: landscape) {
+  .browser-app .filter-area {
+    position: relative;
+    flex-shrink: 0;
+  }
+  .browser-app .filters {
+    top: calc(100% + 4px);
+    right: 0;
+    max-height: calc(100dvh - 270px);
+  }
+}
+@media (min-width: 1000px) and (orientation: landscape) {
+  .browser-app .card-content strong {
+    max-width: calc(100% - 18px);
+  }
+}

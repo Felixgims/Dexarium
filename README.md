@@ -93,3 +93,7 @@ Hash routes work without server rewrite rules. The application base path, sprite
 4. Add cross-browser/accessibility validation, confirmed Pages deployment and release tagging after review.
 
 Pokémon and its characters belong to their respective rights holders. Unofficial project. PokéAPI's source license and sprite attribution are preserved in `docs/` and shipped in `public/`. No ownership of Pokémon artwork is claimed.
+
+## Compact desktop storage and expanded Pokédex
+
+The collection box now fits the landscape viewport with all 30 slots visible. The encyclopedia is available at `#/pokedex` (`#/wiki` remains compatible), with stats, branching evolutions, versioned encounters and forms. See [update notes](docs/pokedex-update.md) for source coverage, verification, offline installation and deployment instructions.
