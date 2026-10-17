@@ -289,3 +289,26 @@
     max-width: calc(100% - 18px);
   }
 }
+
+/* Tracker cards have a second control (variant selector) after registration.
+   Keep the species-detail button measurable and clickable at 1280×720. */
+@media (min-width: 1000px) and (orientation: landscape) {
+  .browser-app .pokemon-card:has(> .capture) .card-content,
+  .browser-app .pokemon-card:has(> .capture) .card-content {
+    flex: 1 1 auto;
+    min-height: 24px;
+    height: auto;
+  }
+  .browser-app .pokemon-card > select[aria-label^="Variante capturada"] {
+    flex: 0 0 20px;
+    min-height: 20px;
+    max-width: calc(100% - 6px);
+    margin: 0 3px 2px;
+    padding: 0 3px;
+    font-size: 9px;
+  }
+  .browser-app .pokemon-card:has(> select[aria-label^="Variante capturada"]) .capture {
+    margin-bottom: 0;
+    flex: 0 0 20px;
+  }
+}
