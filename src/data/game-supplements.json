@@ -1,0 +1,86 @@
+{
+  "sources": {
+    "treecko": {
+      "url": "https://pokemondb.net/pokedex/treecko",
+      "checked": "2026-10-17"
+    },
+    "torchic": {
+      "url": "https://pokemondb.net/pokedex/torchic",
+      "checked": "2026-10-17"
+    },
+    "mudkip": {
+      "url": "https://pokemondb.net/pokedex/mudkip",
+      "checked": "2026-10-17"
+    }
+  },
+  "evolutions": [
+    {
+      "to": "species:253",
+      "fromForm": "form:252",
+      "groups": ["5", "6", "16"],
+      "conditions": ["Subir de nivel", "Nivel mínimo: 16"],
+      "source": "treecko"
+    },
+    {
+      "to": "species:254",
+      "fromForm": "form:253",
+      "groups": ["5", "6", "16"],
+      "conditions": ["Subir de nivel", "Nivel mínimo: 36"],
+      "source": "treecko"
+    },
+    {
+      "to": "species:256",
+      "fromForm": "form:255",
+      "groups": ["5", "6", "16"],
+      "conditions": ["Subir de nivel", "Nivel mínimo: 16"],
+      "source": "torchic"
+    },
+    {
+      "to": "species:257",
+      "fromForm": "form:256",
+      "groups": ["5", "6", "16"],
+      "conditions": ["Subir de nivel", "Nivel mínimo: 36"],
+      "source": "torchic"
+    },
+    {
+      "to": "species:259",
+      "fromForm": "form:258",
+      "groups": ["5", "6", "16"],
+      "conditions": ["Subir de nivel", "Nivel mínimo: 16"],
+      "source": "mudkip"
+    },
+    {
+      "to": "species:260",
+      "fromForm": "form:259",
+      "groups": ["5", "6", "16"],
+      "conditions": ["Subir de nivel", "Nivel mínimo: 36"],
+      "source": "mudkip"
+    }
+  ],
+  "acquisitions": [
+    {
+      "formId": "form:252",
+      "games": ["ruby", "sapphire", "emerald", "omega-ruby", "alpha-sapphire"],
+      "method": "Elección de Pokémon inicial",
+      "area": "Ruta 101",
+      "conditions": "Elegirlo como inicial; las otras dos especies requieren otra vía de obtención.",
+      "source": "treecko"
+    },
+    {
+      "formId": "form:255",
+      "games": ["ruby", "sapphire", "emerald", "omega-ruby", "alpha-sapphire"],
+      "method": "Elección de Pokémon inicial",
+      "area": "Ruta 101",
+      "conditions": "Elegirlo como inicial; las otras dos especies requieren otra vía de obtención.",
+      "source": "torchic"
+    },
+    {
+      "formId": "form:258",
+      "games": ["ruby", "sapphire", "emerald", "omega-ruby", "alpha-sapphire"],
+      "method": "Elección de Pokémon inicial",
+      "area": "Ruta 101",
+      "conditions": "Elegirlo como inicial; las otras dos especies requieren otra vía de obtención.",
+      "source": "mudkip"
+    }
+  ]
+}

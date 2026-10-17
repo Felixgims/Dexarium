@@ -84,17 +84,25 @@
 .evolution-condition small {
   display: block;
 }
-.encounter-list {
+.encounter-list,
+.acquisition-list {
   display: grid;
   gap: 8px;
 }
-.encounter-list article {
+.encounter-list article,
+.acquisition-list article {
   padding: 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
   gap: 4px;
   font-size: 12px;
+}
+.acquisition-list article {
+  border-inline-start: 3px solid var(--accent);
+}
+.acquisition-list p {
+  margin: 0;
 }
 .encounter-list small,
 .data-source {

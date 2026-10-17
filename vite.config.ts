@@ -4,6 +4,7 @@ import tailwind from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig({
   base: process.env.BASE_PATH || "/Dexarium/",
+  build: { emptyOutDir: true },
   plugins: [
     react(),
     tailwind(),

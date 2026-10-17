@@ -41,6 +41,17 @@ for (const [width, height] of [
           r.height > 0,
       ),
     ).toBe(true);
+    const clickable = await page
+      .locator(".counters button:enabled")
+      .evaluateAll((buttons) =>
+        buttons.every((button) => {
+          const r = button.getBoundingClientRect();
+          return button.contains(
+            document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2),
+          );
+        }),
+      );
+    expect(clickable).toBe(true);
     await page.getByRole("button", { name: "Filtros", exact: true }).click();
     await expect(page.locator(".filters")).toBeVisible();
     expect(
@@ -92,6 +103,27 @@ test("encyclopedia stats, branches, versioned encounters, old route and offline 
   );
 });
 
+test("short landscape viewports scroll inside the box without clipping controls", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 600 });
+  await page.goto("./");
+  const box = page.locator(".box-viewport");
+  const geometry = await box.evaluate((el) => ({
+    height: document.documentElement.scrollHeight,
+    scrollable: el.scrollHeight > el.clientHeight,
+  }));
+  expect(geometry.height).toBeLessThanOrEqual(600);
+  expect(geometry.scrollable).toBe(true);
+  await page
+    .locator(".pokemon-card")
+    .last()
+    .getByRole("button", { name: /^Añadir normal/ })
+    .click();
+  await expect(page.locator(".box-header")).toBeInViewport();
+  await expect(page.locator(".box-footer")).toBeInViewport();
+});
+
 test("regional completion ignores global ownership and keeps all slots visible", async ({
   page,
 }) => {
@@ -129,4 +161,37 @@ test("regional completion ignores global ownership and keeps all slots visible",
     .click();
   await expect(page.getByLabel("Contexto de juego")).toHaveValue("emerald");
   await expect(page.getByLabel("Contexto de juego")).toBeDisabled();
+  await page.getByRole("tab", { name: "Evolución", exact: true }).click();
+  await expect(page.getByRole("tabpanel")).toContainText("Nivel mínimo: 16");
+  await expect(page.getByRole("tabpanel")).toContainText("Nivel mínimo: 36");
+  await page.getByRole("tab", { name: "Cómo obtener", exact: true }).click();
+  await expect(page.locator(".acquisition-list")).toContainText(
+    "Elección de Pokémon inicial",
+  );
+  await expect(page.locator(".acquisition-list")).toContainText("Ruta 101");
+});
+
+test("historical tracker type filters agree with Pokémon details", async ({
+  page,
+}) => {
+  await page.goto("./");
+  await page
+    .getByRole("button", { name: "Crear Pokédex", exact: true })
+    .last()
+    .click();
+  await page.getByLabel("Nombre", { exact: true }).fill("Kanto histórico");
+  await page.getByLabel("Juego", { exact: true }).selectOption("red");
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Crear Pokédex", exact: true })
+    .click();
+  await page.getByLabel("Buscar Pokémon").fill("Clefairy");
+  await expect(page.locator(".pokemon-card")).toHaveCount(1);
+  await expect(page.locator(".form-label")).toHaveText("Normal");
+  await page.getByRole("button", { name: "Filtros", exact: true }).click();
+  await page.getByLabel("Tipo", { exact: true }).selectOption("Hada");
+  await expect(page.locator(".pokemon-card")).toHaveCount(0);
+  await page.getByLabel("Tipo", { exact: true }).selectOption("Normal");
+  await expect(page.locator(".pokemon-card")).toHaveCount(1);
+  await expect(page.locator(".empty-slot")).toHaveCount(29);
 });

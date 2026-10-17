@@ -9,6 +9,8 @@ import {
   trackerDexes,
   loadEncounters,
   formTypes,
+  formExistsInGeneration,
+  acquisitionMethods,
 } from "./encyclopedia";
 describe("encyclopedia and regional invariants", () => {
   it("keeps regional order and game definitions distinct", () => {
@@ -94,6 +96,72 @@ describe("encyclopedia and regional invariants", () => {
     expect(records.every((e) => e.min <= e.max)).toBe(true);
     expect(await loadEncounters("scarlet", pikachu.pokemon)).toEqual([]);
   });
+});
+
+it("does not expose future species or forms in historical game contexts", () => {
+  const sylveon = baseForms.get("species:700")!;
+  expect(contextualForms(sylveon.speciesId, "red")).toEqual([]);
+  expect(baseStats(sylveon.id, "red")).toBeNull();
+  expect(formTypes(sylveon.id, "red")).toEqual([]);
+  expect(evolutionRules(sylveon.speciesId, "red", "form:133")).toEqual([]);
+  const mega = encyclopedia.extraForms.find(
+    (f) => f.speciesId === "species:6",
+  )!;
+  expect(formExistsInGeneration(mega.id, "ruby")).toBe(false);
+  expect(baseStats(mega.id, "ruby")).toBeNull();
+});
+
+it("resolves both stages of Hoenn starters only in audited versions", () => {
+  for (const game of [
+    "ruby",
+    "sapphire",
+    "emerald",
+    "omega-ruby",
+    "alpha-sapphire",
+  ])
+    for (const starter of [252, 255, 258])
+      for (const stage of [1, 2]) {
+        const rules = evolutionRules(
+          `species:${starter + stage}`,
+          game,
+          `form:${starter + stage - 1}`,
+        );
+        expect(rules).toHaveLength(1);
+        expect(rules[0].conditions).toContain(
+          `Nivel mínimo: ${stage === 1 ? 16 : 36}`,
+        );
+      }
+  expect(evolutionRules("species:253", "red", "form:252")).toEqual([]);
+  expect(evolutionRules("species:253", "legends-arceus", "form:252")).toEqual(
+    [],
+  );
+  expect(evolutionRules("species:253", "emerald", "form:255")).toEqual([]);
+});
+
+it("reports starter selection separately from wild encounters without inventing levels or rates", () => {
+  for (const n of [252, 255, 258]) {
+    expect(acquisitionMethods(`form:${n}`, "emerald")).toEqual([
+      expect.objectContaining({
+        method: "Elección de Pokémon inicial",
+        area: "Ruta 101",
+      }),
+    ]);
+    expect(acquisitionMethods(`form:${n}`, "red")).toEqual([]);
+    expect(acquisitionMethods(`form:${n + 1}`, "emerald")).toEqual([]);
+  }
+});
+
+it("keeps regional evolution items separate from the base form", () => {
+  const ice = evolutionRules("species:38", "sun", "form:10205", "form:10206");
+  expect(ice).toHaveLength(1);
+  expect(ice[0].conditions.join(" ")).toContain("Piedra Hielo");
+  expect(ice[0].conditions.join(" ")).not.toContain("Piedra Fuego");
+  expect(
+    evolutionRules("species:38", "ruby", "form:10205", "form:10206"),
+  ).toEqual([]);
+  expect(
+    evolutionRules("species:38", "ultra-sun", "form:10205", "form:10206"),
+  ).toEqual([]);
 });
 
 it("uses historical types instead of leaking modern Fairy typing into Red", () => {

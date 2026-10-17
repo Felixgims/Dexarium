@@ -10,6 +10,9 @@ import {
   loadEncounters,
   gameSpecies,
   formTypes,
+  formExistsInGeneration,
+  acquisitionMethods,
+  encyclopediaForms,
   type Encounter,
 } from "./encyclopedia";
 import { Sprite } from "./components";
@@ -35,7 +38,27 @@ export function PokedexDetail({
   const unverifiedForm =
     !!gameId && !contextualForms(s.id, gameId).some((f) => f.id === form.id);
   const stats = absent || unverifiedForm ? null : baseStats(form.id, gameId);
+  const acquisitions = acquisitionMethods(form.id, gameId);
+  const unavailable = absent || !formExistsInGeneration(form.id, gameId);
   const family = evolutionFamily(s.id, gameId);
+  const selectedRules = evolutionRules(
+    s.id,
+    gameId,
+    undefined,
+    form.category === "base" ? undefined : form.id,
+  );
+  const chainForm = (id: string) => {
+    if (id === s.id) return form;
+    const parentForms = new Set(
+      selectedRules.map((r) => r.fromForm).filter(Boolean),
+    );
+    if (id === s.evolvesFrom && parentForms.size === 1)
+      return (
+        encyclopediaForms.find((f) => f.id === [...parentForms][0]) ??
+        baseForms.get(id)!
+      );
+    return baseForms.get(id)!;
+  };
   const description = encyclopedia.flavor[String(s.number)];
   useEffect(() => {
     let cancelled = false;
@@ -226,9 +249,15 @@ export function PokedexDetail({
             <h3>Relaciones evolutivas</h3>
             <div className="evolution-tree">
               {family.map((p) => {
-                const parent = speciesById.get(p.evolvesFrom ?? "");
+                const parent = family.find((f) => f.id === p.evolvesFrom);
+                const displayed = chainForm(p.id);
                 const rules = parent
-                  ? evolutionRules(p.id, gameId, baseForms.get(parent.id)?.id)
+                  ? evolutionRules(
+                      p.id,
+                      gameId,
+                      chainForm(parent.id).id,
+                      displayed.category === "base" ? undefined : displayed.id,
+                    )
                   : [];
                 return (
                   <article
@@ -264,10 +293,10 @@ export function PokedexDetail({
                         )}
                       </div>
                     )}
-                    <button onClick={() => onSelect(baseForms.get(p.id)!)}>
-                      <Sprite form={baseForms.get(p.id)!} />
+                    <button onClick={() => onSelect(displayed)}>
+                      <Sprite form={displayed} />
                       <span>
-                        #{p.number} {p.name}
+                        #{p.number} {p.name} {displayed.label}
                       </span>
                     </button>
                   </article>
@@ -292,12 +321,23 @@ export function PokedexDetail({
                 ? ` · ${encyclopedia.games[gameId].regions.join(" / ")}`
                 : ""}
             </h3>
+            {acquisitions.length > 0 && !unverifiedForm && (
+              <div className="acquisition-list">
+                {acquisitions.map((a) => (
+                  <article key={`${a.method}-${a.area}`}>
+                    <strong>{a.method}</strong>
+                    <span>{a.area}</span>
+                    <p>{a.conditions}</p>
+                  </article>
+                ))}
+              </div>
+            )}
             {!gameId ? (
               <p>
                 Selecciona un juego para consultar encuentros específicos de esa
                 versión.
               </p>
-            ) : absent || unverifiedForm ? (
+            ) : unavailable || unverifiedForm ? (
               <p>
                 No hay encuentros verificables para esta especie o forma en este
                 contexto.
@@ -329,6 +369,8 @@ export function PokedexDetail({
                   ))}
                 </div>
               </>
+            ) : acquisitions.length ? (
+              <p>No hay otros encuentros documentados en la fuente local.</p>
             ) : (
               <p>
                 Sin encuentros documentados para esta versión. Esto no implica
@@ -338,13 +380,8 @@ export function PokedexDetail({
             {!!gameId && !absent && !unverifiedForm && s.evolvesFrom && (
               <>
                 <h3>Obtención por evolución</h3>
-                {evolutionRules(s.id, gameId, baseForms.get(s.evolvesFrom)?.id)
-                  .length ? (
-                  evolutionRules(
-                    s.id,
-                    gameId,
-                    baseForms.get(s.evolvesFrom)?.id,
-                  ).map((r, i) => (
+                {selectedRules.length ? (
+                  selectedRules.map((r, i) => (
                     <p key={i}>
                       {speciesById.get(s.evolvesFrom!)?.name} → {s.name}:{" "}
                       {r.conditions.join(" · ")}
@@ -394,6 +431,8 @@ export function PokedexDetail({
       </div>
       <p className="data-source">
         Datos locales de PokéAPI · revisión {encyclopedia.source.slice(0, 8)}.
+        {acquisitions.length > 0 &&
+          " Selección inicial: suplemento verificado de Pokémon Database."}
         Las lagunas se indican explícitamente.
       </p>
     </section>

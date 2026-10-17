@@ -37,7 +37,10 @@ for (const f of forms) {
   for (const a of [f.art, f.shinyArt])
     if (a) {
       assert(fs.existsSync(`public/art/${a.sheet}.webp`));
-      assert(fs.statSync(`public/art/${a.sheet}.webp`).size > 100, "Empty sprite atlas");
+      assert(
+        fs.statSync(`public/art/${a.sheet}.webp`).size > 100,
+        "Empty sprite atlas",
+      );
       assert(a.index >= 0 && a.index < 120);
     }
 }
@@ -48,6 +51,34 @@ for (const d of dexes) {
 }
 for (const g of games)
   for (const id of g.scopes) assert(dexes.some((d) => d.id === id));
+const encyclopedia = read("encyclopedia"),
+  supplements = read("game-supplements");
+for (const f of [...forms, ...encyclopedia.extraForms]) {
+  const detail = encyclopedia.details[f.id];
+  assert(detail, `Missing encyclopedia detail ${f.id}`);
+  if (detail.stats) {
+    assert.equal(detail.stats.length, 6);
+    assert(
+      detail.stats.every((n) => Number.isInteger(n) && n >= 1 && n <= 255),
+    );
+  }
+}
+for (const r of supplements.evolutions) {
+  assert(supplements.sources[r.source], "Missing evolution attribution");
+  const parent = forms.find((f) => f.id === r.fromForm)?.speciesId;
+  assert.equal(species.find((s) => s.id === r.to)?.evolvesFrom, parent);
+  assert(
+    r.groups.every((id) =>
+      Object.values(encyclopedia.games).some((g) => g.group === id),
+    ),
+  );
+  assert(r.conditions.length > 0);
+}
+for (const r of supplements.acquisitions) {
+  assert(forms.some((f) => f.id === r.formId));
+  assert(supplements.sources[r.source], "Missing acquisition attribution");
+  assert(r.games.every((id) => games.some((g) => g.id === id)));
+}
 assert.equal(
   dexes
     .find((d) => d.id === "4")

@@ -115,6 +115,7 @@ export function TrackerEditor({
         <label>
           Juego
           <select
+            aria-label="Juego"
             disabled={!!initial}
             value={gameId}
             onChange={(e) => {

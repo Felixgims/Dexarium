@@ -1,4 +1,5 @@
 import raw from "./data/encyclopedia.json";
+import supplements from "./data/game-supplements.json";
 import { species, forms, dexes, games, speciesById } from "./catalog";
 import type { Form, Tracker } from "./domain";
 export interface FormDetail {
@@ -33,6 +34,20 @@ export const encyclopedia = raw as unknown as {
   evolutions: EvolutionRule[];
 };
 export const encyclopediaForms = [...forms, ...encyclopedia.extraForms];
+/** Existence is separate from regional membership or obtainability. */
+export function formExistsInGeneration(formId: string, gameId = "") {
+  if (!gameId) return true;
+  const game = encyclopedia.games[gameId];
+  const form = encyclopediaForms.find((f) => f.id === formId);
+  const s = form && speciesById.get(form.speciesId);
+  const introduced = encyclopedia.details[formId]?.introducedGeneration;
+  return (
+    !!game &&
+    !!s &&
+    s.generation <= game.generation &&
+    (introduced == null || introduced <= game.generation)
+  );
+}
 export function trackerDexes(tracker: Tracker) {
   const game = games.find((g) => g.id === tracker.gameId);
   return dexes.filter(
@@ -51,6 +66,7 @@ export function contextualForms(speciesId: string, gameId: string) {
   return encyclopediaForms.filter((f) => {
     if (f.speciesId !== speciesId) return false;
     if (!gameId) return true;
+    if (!formExistsInGeneration(f.id, gameId)) return false;
     if (f.category === "base") return true;
     // Only explicit game restrictions are strong enough evidence for alternate forms.
     return (
@@ -81,12 +97,52 @@ export function evolutionFamily(speciesId: string, gameId: string) {
             gameSpecies(gameId, s.id)))),
   );
 }
-export function evolutionRules(to: string, gameId: string, fromForm?: string) {
+export function evolutionRules(
+  to: string,
+  gameId: string,
+  fromForm?: string,
+  toForm?: string,
+) {
+  if (
+    fromForm &&
+    encyclopediaForms.find((f) => f.id === fromForm)?.speciesId !==
+      speciesById.get(to)?.evolvesFrom
+  )
+    return [];
+  if (
+    gameId &&
+    (!encyclopedia.games[gameId] ||
+      !speciesById.has(to) ||
+      speciesById.get(to)!.generation > encyclopedia.games[gameId].generation ||
+      (fromForm && !formExistsInGeneration(fromForm, gameId)) ||
+      (toForm && !formExistsInGeneration(toForm, gameId)))
+  )
+    return [];
   const all = encyclopedia.evolutions.filter(
-    (r) => r.to === to && (!r.fromForm || r.fromForm === fromForm) && !r.toForm,
+    (r) =>
+      r.to === to &&
+      (!r.fromForm || !fromForm || r.fromForm === fromForm) &&
+      (toForm ? r.toForm === toForm : !r.toForm),
   );
   if (!gameId) return all;
-  const exact = all.filter((r) => r.group === encyclopedia.games[gameId].group);
+  const group = encyclopedia.games[gameId].group;
+  // Audited version-specific additions. Never propagate special mechanics to other games.
+  const additions = supplements.evolutions.filter(
+    (r) =>
+      r.to === to &&
+      !toForm &&
+      r.groups.includes(group) &&
+      (!fromForm || r.fromForm === fromForm),
+  );
+  const exact = all.filter((r) => r.group === group);
+  if (!exact.length && additions.length)
+    return additions.map((r) => ({
+      to: r.to,
+      group,
+      fromForm: r.fromForm,
+      toForm: null,
+      conditions: r.conditions,
+    }));
   if (exact.length)
     return exact.map((r) => ({
       ...r,
@@ -106,6 +162,9 @@ export function evolutionRules(to: string, gameId: string, fromForm?: string) {
   ]);
   if (
     stable.has(speciesById.get(to)!.number) &&
+    !toForm &&
+    (!fromForm ||
+      encyclopediaForms.find((f) => f.id === fromForm)?.category === "base") &&
     !["legends-arceus", "legends-za"].includes(gameId)
   ) {
     return all.filter(
@@ -119,6 +178,7 @@ export function evolutionRules(to: string, gameId: string, fromForm?: string) {
   return [];
 }
 export function baseStats(formId: string, gameId: string) {
+  if (!formExistsInGeneration(formId, gameId)) return null;
   const d = encyclopedia.details[formId];
   if (!d?.stats) return null;
   if (!gameId) return d.stats;
@@ -152,6 +212,7 @@ export async function loadEncounters(
 }
 
 export function formTypes(formId: string, gameId = "") {
+  if (!formExistsInGeneration(formId, gameId)) return [];
   const d = encyclopedia.details[formId];
   if (!d) return [];
   if (!gameId) return d.types;
@@ -161,4 +222,11 @@ export function formTypes(formId: string, gameId = "") {
     .filter((g) => g >= generation)
     .sort((a, b) => a - b)[0];
   return historical ? d.pastTypes[String(historical)] : d.types;
+}
+
+export function acquisitionMethods(formId: string, gameId: string) {
+  if (!formExistsInGeneration(formId, gameId)) return [];
+  return supplements.acquisitions.filter(
+    (r) => r.formId === formId && r.games.includes(gameId),
+  );
 }

@@ -206,7 +206,8 @@ function App() {
             .toLowerCase()
             .includes(q)) &&
         (gen === "all" || s.generation === Number(gen)) &&
-        (type === "all" || f.types.includes(type)) &&
+        (type === "all" ||
+          formTypes(f.id, activeTracker?.gameId).includes(type)) &&
         (category === "all" || f.category === category) &&
         (!allowedSpecies || allowedSpecies.has(s.id)) &&
         (filter === "all" ||
@@ -232,6 +233,7 @@ function App() {
     specimens,
     progress,
     activeTracker?.id,
+    activeTracker?.gameId,
   ]);
   const pages = Math.max(1, Math.ceil(rows.length / 30)),
     current = Math.min(page, pages - 1),
@@ -583,11 +585,12 @@ function App() {
                     <label>
                       Tipo
                       <select
+                        aria-label="Tipo"
                         value={type}
                         onChange={(e) => setType(e.target.value)}
                       >
                         <option value="all">Todos</option>
-                        {[...new Set(forms.flatMap((f) => f.types))]
+                        {[...new Set(forms.flatMap((f) => formTypes(f.id)))]
                           .sort()
                           .map((t) => (
                             <option key={t}>{t}</option>
