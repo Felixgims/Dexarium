@@ -817,7 +817,7 @@ function App() {
                             </span>
                           </button>
                           {view === "tracker" ? (
-                            <button
+                            <> <button
                               className={`capture ${caught.has(s.id) ? "captured" : ""}`}
                               onClick={() =>
                                 run(() =>
@@ -846,7 +846,8 @@ function App() {
                                 <option value="normal">Normal</option>
                                 {f.shiny === "available" && <option value="shiny">Shiny</option>}
                               </select>
-                            )
+                            )}
+                            </>
                           ) : view === "pokedex" ? (
                             <button
                               className="wiki-open"
