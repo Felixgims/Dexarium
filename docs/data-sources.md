@@ -31,3 +31,7 @@ References:
 - https://legends.pokemon.com/es-mx/news/release-date (Z-A main-release inclusion)
 
 Shiny-lock provenance: https://projectpokemon.org/home/files/file/2604-ilex-forest-spiky-eared-pichu/ and https://bulbapedia.bulbagarden.net/wiki/Spiky-eared_Pichu — historical event cannot be shiny or leave HGSS.
+
+### Encyclopedia expansion
+
+`prepare_encyclopedia.py` adds pinned local form statistics, historical stat/type corrections, species descriptions, abilities, evolution conditions, region mappings and versioned encounter groups. See [pokedex-update.md](pokedex-update.md) for import coverage, explicit missing-data behavior, form compatibility and accuracy limits. These records do not replace or renumber the existing collection catalogue.

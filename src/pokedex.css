@@ -1,0 +1,123 @@
+.encyclopedia-detail {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+  padding-top: 16px;
+}
+.detail-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+  margin: 12px 0;
+}
+.detail-tabs button {
+  font-size: 12px;
+  padding: 7px 10px;
+}
+.detail-tabs button[aria-selected="true"] {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--subtle);
+}
+.stat-bars {
+  display: grid;
+  gap: 12px;
+}
+.stat-bars > div {
+  display: grid;
+  grid-template-columns: 125px minmax(50px, 1fr) 35px;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+}
+.stat-bars meter {
+  width: 100%;
+  height: 16px;
+  accent-color: var(--accent);
+}
+.stat-bars meter::-webkit-meter-optimum-value {
+  background: var(--accent);
+}
+.stat-bars b {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.stat-total {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+  padding-top: 12px;
+}
+.ability {
+  display: inline-block;
+  margin-right: 8px;
+}
+.evolution-tree {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.evolution-tree article {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--card);
+}
+.evolution-tree article.current-evolution {
+  border-color: var(--accent);
+}
+.evolution-tree button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+}
+.evolution-condition {
+  font-size: 12px;
+}
+.evolution-condition p {
+  font-size: 11px;
+  margin: 6px 0;
+}
+.evolution-condition small {
+  display: block;
+}
+.encounter-list {
+  display: grid;
+  gap: 8px;
+}
+.encounter-list article {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+.encounter-list small,
+.data-source {
+  color: var(--muted);
+  font-size: 10px;
+}
+.form-choice {
+  margin: 3px;
+  font-size: 12px;
+}
+.form-choice[aria-pressed="true"] {
+  border-color: var(--accent);
+}
+.data-context {
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.encyclopedia-detail h3 {
+  margin-top: 15px;
+}
+dialog {
+  width: min(800px, calc(100vw - 40px));
+  max-height: calc(100dvh - 40px);
+  overflow: auto;
+}

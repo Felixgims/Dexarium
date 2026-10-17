@@ -127,10 +127,11 @@ test("all local sprite atlases decode, search, wiki and light theme work", async
   await expect(page.getByRole("dialog")).toContainText("No obtenible");
   await page.getByRole("button", { name: "Cerrar", exact: true }).click();
   await page.getByLabel("Buscar Pokémon").fill("");
-  await page.getByRole("link", { name: "Pokémon Wiki", exact: true }).click();
+  await page.getByRole("link", { name: "Pokédex", exact: true }).click();
   await page
     .getByRole("button", { name: "Abrir Bulbasaur", exact: true })
     .click();
+  await page.getByRole("tab", { name: "Evolución", exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText("Relaciones evolutivas");
   await page.getByRole("button", { name: "Cerrar", exact: true }).click();
   await page.screenshot({ path: "test-results/light.png", fullPage: true });

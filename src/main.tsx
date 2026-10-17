@@ -58,6 +58,9 @@ import {
   type Specimen,
 } from "./domain";
 import "./style.css";
+import "./desktop.css";
+import "./pokedex.css";
+import { trackerDexes, formTypes } from "./encyclopedia";
 import { Sprite, Modal, TrackerEditor, Detail } from "./components";
 const defaults: Preferences = {
   id: "preferences",
@@ -68,7 +71,7 @@ function App() {
   const location = useLocation(),
     navigate = useNavigate();
   const route = location.pathname.split("/").filter(Boolean);
-  const view = route[0] || "collection";
+  const view = route[0] === "wiki" ? "pokedex" : route[0] || "collection";
   const specimens = useLiveQuery(() => db.specimens.toArray(), []) ?? [];
   const trackers = useLiveQuery(() => db.trackers.toArray(), []) ?? [];
   const progress = useLiveQuery(() => db.progress.toArray(), []) ?? [];
@@ -134,7 +137,8 @@ function App() {
     setScope(activeTracker?.scopeIds[0] ?? "");
     setPage(0);
   }, [activeTracker?.id, activeTracker?.scopeIds.join(",")]);
-  const activeDex = dexes.find((d) => d.id === scope);
+  const validDexes = activeTracker ? trackerDexes(activeTracker) : [];
+  const activeDex = validDexes.find((d) => d.id === scope) ?? validDexes[0];
   const trackerProgress = progress.filter(
     (p) => p.trackerId === activeTracker?.id && p.state === "caught",
   );
@@ -158,8 +162,8 @@ function App() {
         ? "Pokédex Nacional"
         : view === "tracker"
           ? (activeTracker?.name ?? "Pokédex no encontrada")
-          : view === "wiki"
-            ? "Enciclopedia Pokémon"
+          : view === "pokedex"
+            ? "Pokédex"
             : view === "stats"
               ? "Tu colección, en cifras"
               : "Ajustes y copias";
@@ -232,7 +236,7 @@ function App() {
   const pages = Math.max(1, Math.ceil(rows.length / 30)),
     current = Math.min(page, pages - 1),
     box = pageEntries(rows, current);
-  const isBrowser = ["collection", "national", "tracker", "wiki"].includes(
+  const isBrowser = ["collection", "national", "tracker", "pokedex"].includes(
     view,
   );
   useEffect(() => {
@@ -299,7 +303,7 @@ function App() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   return (
-    <div className="app">
+    <div className={`app ${isBrowser ? "browser-app" : ""}`}>
       <aside className="sidebar">
         <NavLink to="/collection" className="brand">
           <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" />
@@ -343,9 +347,9 @@ function App() {
             Nueva Pokédex
           </button>
           <div className="nav-label">EXPLORAR</div>
-          <NavLink to="/wiki">
+          <NavLink to="/pokedex">
             <BookOpen size={19} />
-            Pokémon Wiki
+            Pokédex
           </NavLink>
           <NavLink to="/stats">
             <ChartNoAxesCombined size={19} />
@@ -493,142 +497,144 @@ function App() {
           </section>
           {isBrowser && (
             <>
-              <div className="toolbar">
-                <div className="tabs">
+              <div className="filter-area">
+                <div className="toolbar">
+                  <div className="tabs">
+                    <button
+                      className={filter === "all" ? "selected" : ""}
+                      onClick={() => setFilter("all")}
+                    >
+                      Todos{" "}
+                      <span>
+                        {view === "collection"
+                          ? forms.length
+                          : view === "tracker"
+                            ? activeDex?.entries.length
+                            : species.length}
+                      </span>
+                    </button>
+                    <button
+                      className={filter === "owned" ? "selected" : ""}
+                      onClick={() => setFilter("owned")}
+                    >
+                      Registrados
+                    </button>
+                    <button
+                      className={filter === "missing" ? "selected" : ""}
+                      onClick={() => setFilter("missing")}
+                    >
+                      Pendientes
+                    </button>
+                  </div>
+                  <div className="search-wrap">
+                    <Search size={17} />
+                    <input
+                      aria-label="Buscar Pokémon"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Nombre, número o forma…"
+                    />
+                  </div>
                   <button
-                    className={filter === "all" ? "selected" : ""}
-                    onClick={() => setFilter("all")}
+                    className={showFilters ? "selected" : ""}
+                    onClick={() => setShowFilters(!showFilters)}
+                    aria-expanded={showFilters}
                   >
-                    Todos{" "}
-                    <span>
-                      {view === "collection"
-                        ? forms.length
-                        : view === "tracker"
-                          ? activeDex?.entries.length
-                          : species.length}
-                    </span>
-                  </button>
-                  <button
-                    className={filter === "owned" ? "selected" : ""}
-                    onClick={() => setFilter("owned")}
-                  >
-                    Registrados
-                  </button>
-                  <button
-                    className={filter === "missing" ? "selected" : ""}
-                    onClick={() => setFilter("missing")}
-                  >
-                    Pendientes
+                    <SlidersHorizontal size={17} />
+                    Filtros
                   </button>
                 </div>
-                <div className="search-wrap">
-                  <Search size={17} />
-                  <input
-                    aria-label="Buscar Pokémon"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Nombre, número o forma…"
-                  />
-                </div>
-                <button
-                  className={showFilters ? "selected" : ""}
-                  onClick={() => setShowFilters(!showFilters)}
-                  aria-expanded={showFilters}
-                >
-                  <SlidersHorizontal size={17} />
-                  Filtros
-                </button>
-              </div>
-              {showFilters && (
-                <section className="filters">
-                  <label>
-                    Estado
-                    <select
-                      value={filter}
-                      onChange={(e) => setFilter(e.target.value)}
-                    >
-                      {[
-                        ["all", "Todos"],
-                        ["owned", "Registrados"],
-                        ["missing", "Pendientes"],
-                        ["shiny-owned", "Shiny registrados"],
-                        ["shiny-missing", "Shiny pendientes"],
-                        ["shiny-locked", "Shiny bloqueados"],
-                      ].map(([v, n]) => (
-                        <option key={v} value={v}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Generación
-                    <select
-                      value={gen}
-                      onChange={(e) => setGen(e.target.value)}
-                    >
-                      <option value="all">Todas</option>
-                      {[...new Set(species.map((s) => s.generation))].map(
-                        (n) => (
-                          <option key={n}>{n}</option>
-                        ),
-                      )}
-                    </select>
-                  </label>
-                  <label>
-                    Tipo
-                    <select
-                      value={type}
-                      onChange={(e) => setType(e.target.value)}
-                    >
-                      <option value="all">Todos</option>
-                      {[...new Set(forms.flatMap((f) => f.types))]
-                        .sort()
-                        .map((t) => (
+                {showFilters && (
+                  <section className="filters">
+                    <label>
+                      Estado
+                      <select
+                        value={filter}
+                        onChange={(e) => setFilter(e.target.value)}
+                      >
+                        {[
+                          ["all", "Todos"],
+                          ["owned", "Registrados"],
+                          ["missing", "Pendientes"],
+                          ["shiny-owned", "Shiny registrados"],
+                          ["shiny-missing", "Shiny pendientes"],
+                          ["shiny-locked", "Shiny bloqueados"],
+                        ].map(([v, n]) => (
+                          <option key={v} value={v}>
+                            {n}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Generación
+                      <select
+                        value={gen}
+                        onChange={(e) => setGen(e.target.value)}
+                      >
+                        <option value="all">Todas</option>
+                        {[...new Set(species.map((s) => s.generation))].map(
+                          (n) => (
+                            <option key={n}>{n}</option>
+                          ),
+                        )}
+                      </select>
+                    </label>
+                    <label>
+                      Tipo
+                      <select
+                        value={type}
+                        onChange={(e) => setType(e.target.value)}
+                      >
+                        <option value="all">Todos</option>
+                        {[...new Set(forms.flatMap((f) => f.types))]
+                          .sort()
+                          .map((t) => (
+                            <option key={t}>{t}</option>
+                          ))}
+                      </select>
+                    </label>
+                    <label>
+                      Forma
+                      <select
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                      >
+                        <option value="all">Todas</option>
+                        {["base", "regional", "cosmetic", "event"].map((t) => (
                           <option key={t}>{t}</option>
                         ))}
-                    </select>
-                  </label>
-                  <label>
-                    Forma
-                    <select
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
+                      </select>
+                    </label>
+                    <label>
+                      Incluido en Pokédex de
+                      <select
+                        value={gameFilter}
+                        onChange={(e) => setGameFilter(e.target.value)}
+                      >
+                        <option value="all">Todos los juegos</option>
+                        {games.map((g) => (
+                          <option key={g.id} value={g.id}>
+                            {g.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button
+                      onClick={() => {
+                        setSearch("");
+                        setFilter("all");
+                        setType("all");
+                        setGen("all");
+                        setCategory("all");
+                        setGameFilter("all");
+                      }}
                     >
-                      <option value="all">Todas</option>
-                      {["base", "regional", "cosmetic", "event"].map((t) => (
-                        <option key={t}>{t}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Incluido en Pokédex de
-                    <select
-                      value={gameFilter}
-                      onChange={(e) => setGameFilter(e.target.value)}
-                    >
-                      <option value="all">Todos los juegos</option>
-                      {games.map((g) => (
-                        <option key={g.id} value={g.id}>
-                          {g.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <button
-                    onClick={() => {
-                      setSearch("");
-                      setFilter("all");
-                      setType("all");
-                      setGen("all");
-                      setCategory("all");
-                      setGameFilter("all");
-                    }}
-                  >
-                    Limpiar
-                  </button>
-                </section>
-              )}
+                      Limpiar
+                    </button>
+                  </section>
+                )}
+              </div>
               {view === "tracker" && activeTracker && (
                 <section className="tracker-tools">
                   <span>
@@ -637,13 +643,13 @@ function App() {
                   </span>
                   <select
                     aria-label="Ámbito activo"
-                    value={scope}
+                    value={activeDex?.id ?? ""}
                     onChange={(e) => {
                       setScope(e.target.value);
                       setPage(0);
                     }}
                   >
-                    {activeTracker.scopeIds.map((id) => (
+                    {validDexes.map(({ id }) => (
                       <option key={id} value={id}>
                         {dexes.find((d) => d.id === id)?.name}
                       </option>
@@ -787,7 +793,10 @@ function App() {
                             <Sprite form={f} shiny={shiny} />
                             <strong>{s.name}</strong>
                             <span className="form-label">
-                              {f.label || f.types.join(" · ")}
+                              {f.label ||
+                                formTypes(f.id, activeTracker?.gameId).join(
+                                  " · ",
+                                )}
                             </span>
                           </button>
                           {view === "tracker" ? (
@@ -811,7 +820,7 @@ function App() {
                               )}{" "}
                               {caught.has(s.id) ? "Capturado" : "Registrar"}
                             </button>
-                          ) : view === "wiki" ? (
+                          ) : view === "pokedex" ? (
                             <button
                               className="wiki-open"
                               onClick={() => setDetail(f)}
@@ -1078,7 +1087,7 @@ function App() {
                 <p>
                   Las numeraciones regionales proceden de PokéAPI. La inclusión
                   en una Pokédex no demuestra dónde se captura una especie, ni
-                  su compatibilidad con todas las formas. La Wiki muestra
+                  su compatibilidad con todas las formas. La Pokédex muestra
                   pertenencia a Pokédex, no ubicaciones inventadas.
                 </p>
                 <p>
