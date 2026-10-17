@@ -1185,6 +1185,7 @@ function App() {
           }
         />
       )}
+      {aggregate.unclassifiedTotal > 0 && <div className="notice">{aggregate.unclassifiedTotal} capturas sin clasificación normal/shiny. Se conservan sin inventar su variante.</div>}
       {pendingBackup && (
         <Modal title="Restaurar copia" onClose={() => setPendingBackup(null)}>
           <p>
@@ -1230,10 +1231,11 @@ function App() {
       )}
       {deleteId && (
         <Modal title="Eliminar Pokédex" onClose={() => setDeleteId(null)}>
+          <p>{trackers.find(t => t.id === deleteId)?.name} · {games.find(g => g.id === trackers.find(t => t.id === deleteId)?.gameId)?.name}</p>
           <p>
-            Se eliminará este tracker y su progreso. Los ejemplares de la
-            colección global se conservan.
+            Se eliminarán sus registros y su aportación al total global. Los ejemplares manuales se conservan.
           </p>
+          <button autoFocus onClick={() => setDeleteId(null)}>Cancelar</button>
           <button
             className="danger"
             onClick={() =>
@@ -1244,7 +1246,7 @@ function App() {
               })
             }
           >
-            Confirmar eliminación
+            Eliminar Pokédex
           </button>
         </Modal>
       )}
