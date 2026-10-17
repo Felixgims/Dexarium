@@ -156,9 +156,10 @@ test("regional completion ignores global ownership and keeps all slots visible",
     .locator(".pokemon-card")
     .evaluateAll((els) => els.map((el) => el.getBoundingClientRect().bottom));
   expect(cards.every((bottom) => bottom <= 720)).toBe(true);
-  await page
-    .getByRole("button", { name: "Abrir Treecko", exact: true })
-    .click();
+  const detailButton = page.getByRole("button", { name: "Abrir Treecko", exact: true });
+  await expect(detailButton).toBeVisible();
+  await expect(detailButton).toHaveJSProperty("disabled", false);
+  await detailButton.click();
   await expect(page.getByLabel("Contexto de juego")).toHaveValue("emerald");
   await expect(page.getByLabel("Contexto de juego")).toBeDisabled();
   await page.getByRole("tab", { name: "Evolución", exact: true }).click();
