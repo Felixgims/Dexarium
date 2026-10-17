@@ -211,3 +211,21 @@ it("keeps imported unverified shiny specimens out of the confirmed-completion nu
   expect(metrics.shiny).toBe(1);
   expect(metrics.shinyForms).toBe(0);
 });
+
+it("rejects duplicate specimen links in a backup", async () => {
+  const db = make();
+  await changeCount(db, forms[0], false, 1);
+  const b = await exportBackup(db);
+  b.trackers.push({ id: "a", name: "Save", gameId: "emerald", scopeIds: ["4"], description: "", theme: "#ffffff" });
+  b.progress.push({ id: "a/species:1", trackerId: "a", speciesId: "species:1", state: "caught", specimenIds: [b.specimens[0].id, b.specimens[0].id] });
+  expect(() => validateBackup(b)).toThrow("Vínculo inválido");
+});
+
+it("rejects a merge that would leave orphaned progress links", async () => {
+  const db = make();
+  const b = await exportBackup(db);
+  b.trackers.push({ id: "a", name: "Save", gameId: "emerald", scopeIds: ["4"], description: "", theme: "#ffffff" });
+  b.progress.push({ id: "a/species:1", trackerId: "a", speciesId: "species:1", state: "caught", specimenIds: [] });
+  await importBackup(db, b, "merge");
+  expect(await db.progress.count()).toBe(1);
+});
